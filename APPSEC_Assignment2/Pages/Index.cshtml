@@ -1,0 +1,45 @@
+﻿@page
+@model APPSEC_Assignment2.Pages.IndexModel
+@inject IHttpContextAccessor contxt;
+
+@{
+    ViewData["Title"] = "Home page";
+}
+
+
+<script>
+    // Include the token in headers
+    var userToken = "@HttpContext.Session.GetString("Username")";
+    fetch(url, {
+        headers: {
+            "User-Token": userToken
+        }
+    });
+</script>
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <h3>User Info</h3>
+    <ul>
+        <li> Username: @contxt.HttpContext.Session.GetString("Username")</li>
+
+        <li> Auth: @contxt.HttpContext.Session.GetString("AuthToken")</li>
+    </ul>
+
+
+
+    @if (ViewData["EncryptedEmail"] != null)
+    {
+        <h3>Encrypted/Decrypted Info</h3>
+        <p>Encrypted String: @ViewData["EncryptedEmail"]</p>
+        <p>Decrypted String: @ViewData["DecryptedEmail"]</p>
+    }
+
+    
+
+
+    
+</div>
+
+
+
