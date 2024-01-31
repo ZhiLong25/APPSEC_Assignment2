@@ -15,6 +15,7 @@ using System.Net.Mail;
 using System.Net;
 using SendGrid;
 using SendGrid.Helpers.Mail;
+using APPSEC_Assignment2.ViewModel;
 
 namespace APPSEC_Assignment2.Pages
 {
@@ -26,16 +27,19 @@ namespace APPSEC_Assignment2.Pages
         private readonly UserManager<Register> userManager;
 
         // private readonly AuthDbContext _context;
+        private readonly EmailSender _emailSender;
+
 
         // Audit for Login
         private readonly AuditServiceModel _auditLogService;
 
-        public LoginModel(IHttpContextAccessor httpContextAccessor, SignInManager<Register> signInManager, UserManager<Register> userManager,  AuditServiceModel auditLogService)
+        public LoginModel(IHttpContextAccessor httpContextAccessor, SignInManager<Register> signInManager, UserManager<Register> userManager, EmailSender emailSender, AuditServiceModel auditLogService)
 		{
             // _context = context;
             contxt = httpContextAccessor;
 
             this.signInManager = signInManager;
+                _emailSender = emailSender;
             this.userManager = userManager;
             LModel = new Login();
             _auditLogService = auditLogService;
@@ -85,13 +89,7 @@ namespace APPSEC_Assignment2.Pages
                     {
                         contxt.HttpContext.Session.SetString("Username", LModel.Email);
 
-                        var timeSinceLastChange = DateTime.UtcNow - user.PasswordChangedDate;
 
-                        if (timeSinceLastChange > TimeSpan.FromMinutes(1))
-                        {
-                            TempData["AlertMessage"] = "Password has to be changed every 1 minute, login to change";
-                            return RedirectToPage("/ChangePassword");
-                        }
 
 
                         // User authentication successful, check if 2FA is enabled
@@ -129,9 +127,24 @@ namespace APPSEC_Assignment2.Pages
                         ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(i);
                         await HttpContext.SignInAsync("MyCookieAuth", claimsPrincipal);
 
+                        //var timeSinceLastChange = DateTime.UtcNow - user.PasswordChangedDate;
+
+                        //if (timeSinceLastChange > TimeSpan.FromMinutes(1))
+                        //{
+                        //    TempData["AlertMessage"] = "Password has to be changed every 1 minute, login to change";
+                        //    return RedirectToPage("/ChangePassword");
+                        //}
+
+                        var verificationCode = "test";
+
                         _auditLogService.LogUserActivity(LModel.Email, "Login", $"Log in successful {LModel.Email}");
 
-                        return RedirectToPage("/Index");
+
+
+                        await _emailSender.SendEmailAsync(LModel.Email, "Welcome to YourApp!", verificationCode);
+
+
+                        return RedirectToPage("/2fa");
 
                     }
                     else
@@ -150,29 +163,7 @@ namespace APPSEC_Assignment2.Pages
             return Page();
         }
 
-        // Define a method to send an email
-        private async Task SendEmailAsync(string to, string subject, string body)
-        {
-            var smtpClient = new SmtpClient("smtp.gmail.com")
-            {
-                Port = 465,
-                Credentials = new NetworkCredential("shotmanpuru@gmail.com", "puru69shotman"),
-                EnableSsl = true,
-            };
-
-            var mailMessage = new MailMessage
-            {
-                From = new MailAddress("shotmanpuru@gmail.com"),
-                Subject = subject,
-                Body = body,
-                IsBodyHtml = false, // Set to true if the body contains HTML
-            };
-
-            mailMessage.To.Add(to);
-
-            await smtpClient.SendMailAsync(mailMessage);
-        }
-
+        
         public IActionResult Index()
 		{
 

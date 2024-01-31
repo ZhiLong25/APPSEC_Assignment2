@@ -1,4 +1,5 @@
 using APPSEC_Assignment2.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -6,6 +7,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace APPSEC_Assignment2.Pages
 {
+
     public class ChangePasswordModel : PageModel
     {
         private readonly UserManager<Register> _userManager;
@@ -33,16 +35,22 @@ namespace APPSEC_Assignment2.Pages
         [Compare("NewPassword", ErrorMessage = "The new password and confirmation password do not match.")]
         public string ConfirmPassword { get; set; }
 
-        public async Task<IActionResult> OnPostAsync()
+
+        public async Task<IActionResult> OnGetAsync()
         {
-
             var user = await _userManager.GetUserAsync(User);
-
-
             if (user == null)
             {
                 return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
             }
+            return Page();
+
+        }
+
+
+        public async Task<IActionResult> OnPostAsync()
+        {
+            var user = await _userManager.GetUserAsync(User);
 
             var timeSinceLastChange = DateTime.UtcNow - user.PasswordChangedDate;
 

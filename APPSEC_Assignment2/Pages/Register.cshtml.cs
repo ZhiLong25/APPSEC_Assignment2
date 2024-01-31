@@ -58,9 +58,6 @@ namespace APPSEC_Assignment2.Pages
 
 
 
-
-
-
                 // Encryption
                 byte[] emailTxt = Encoding.UTF8.GetBytes(RModel.Email);
                 byte[] cipherEmail = encryptTransform.TransformFinalBlock(emailTxt, 0, emailTxt.Length);

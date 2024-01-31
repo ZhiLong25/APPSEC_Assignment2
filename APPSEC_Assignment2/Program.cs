@@ -37,6 +37,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddTransient<AuditServiceModel>();
+builder.Services.AddTransient<EmailSender>();
 
 
 //Force unauthenticated user to login screen
@@ -44,11 +45,6 @@ builder.Services.ConfigureApplicationCookie(Config =>
 {
     Config.LoginPath = "/Login";
 });
-
-
-
-
-
 
 //Session Timeout
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();

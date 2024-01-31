@@ -18,6 +18,10 @@ namespace APPSEC_Assignment2.Pages
 
         public IActionResult OnGet()
         {
+
+
+
+
             var session = contxt.HttpContext.Session.GetString("AuthToken");
 
             if (session == null)

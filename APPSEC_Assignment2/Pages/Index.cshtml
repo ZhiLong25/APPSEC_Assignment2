@@ -27,6 +27,12 @@
     </ul>
 
 
+    @if (TempData.ContainsKey("AlertMessage"))
+    {
+        <div class="alert alert-warning">
+            <strong>Warning!</strong> @TempData["AlertMessage"]
+        </div>
+    }
 
     @if (ViewData["EncryptedEmail"] != null)
     {
