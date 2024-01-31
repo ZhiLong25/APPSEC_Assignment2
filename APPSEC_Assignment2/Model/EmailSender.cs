@@ -13,11 +13,11 @@ namespace APPSEC_Assignment2.Model
             SmtpClient client = new SmtpClient("smtp.gmail.com", 587);
             client.EnableSsl = true;
             client.UseDefaultCredentials = false;
-            client.Credentials = new NetworkCredential("shotmanpuru@gmail.com", "puru69shotman");
+            client.Credentials = new NetworkCredential("tanzhilong25@gmail.com", "ngnd cqdj rhqi zlvx\r\n");
 
             // Create email message
             MailMessage mailMessage = new MailMessage();
-            mailMessage.From = new MailAddress("shotmanpuru@gmail.com");
+            mailMessage.From = new MailAddress("tanzhilong25@gmail.com");
             mailMessage.To.Add(to);
             mailMessage.Subject = subject;
             mailMessage.IsBodyHtml = true;

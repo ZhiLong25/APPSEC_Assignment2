@@ -80,7 +80,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 // Custom Error Page
-//app.UseStatusCodePagesWithRedirects("/errors/{0}");
+app.UseStatusCodePagesWithRedirects("/errors/{0}");
 
 
 app.UseSession();
@@ -92,12 +92,12 @@ app.UseAuthorization();
 app.UseMiddleware<TokenExpirationMiddleware>();
 
 // Custom Error Page
-app.UseEndpoints(endpoints =>
-{
+//app.UseEndpoints(endpoints =>
+//{
 
-    endpoints.MapRazorPages();
-    endpoints.MapFallbackToPage("/Error");
-});
+//    endpoints.MapRazorPages();
+//    endpoints.MapFallbackToPage("/Error");
+//});
 
 
 app.MapRazorPages();

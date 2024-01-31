@@ -8,12 +8,15 @@ using APPSEC_Assignment2.ViewModel;
 namespace APPSEC_Assignment2.Pages
 {
     public class _2FAModel : PageModel
-    {
+    {   
         private readonly UserManager<Register> userManager;
         private readonly SignInManager<Register> signInManager;
 
         public TwoFactorAuthViewModel TwoFactorAuthViewModel { get; set; }
 
+        private string email;
+        private string password;
+        private bool? rememberMe;
         public _2FAModel(UserManager<Register> userManager, SignInManager<Register> signInManager)
         {
             this.userManager = userManager;
@@ -21,28 +24,59 @@ namespace APPSEC_Assignment2.Pages
             TwoFactorAuthViewModel = new TwoFactorAuthViewModel();
         }
 
+        [BindProperty]
+        public string verificationField { get; set; }
+
         public void OnGet()
         {
+             //email = TempData["Email"];
+             //password = TempData["Password"];
+             //rememberMe = TempData["RememberMe"];
+
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
             var user = await userManager.FindByIdAsync(TwoFactorAuthViewModel.UserId);
 
-            // Verify the Two-Factor Authentication code
-            var result = await userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultAuthenticatorProvider, TwoFactorAuthViewModel.Code);
-
-            if (result)
+            var verificationCode = "test";
+            if (verificationField == verificationCode)
             {
-                // Two-Factor Authentication successful, sign in the user
-                await signInManager.SignInAsync(user, isPersistent: false);
+                //var identityResult = await signInManager.PasswordSignInAsync(
+                //   email,
+                //   password,
+                //    rememberMe.GetValueOrDefault(), // Use GetValueOrDefault to convert bool? to bool
+                //    lockoutOnFailure: true // Enable lockout on failure
+                //);
+
+                //if (identityResult.IsLockedOut)
+                //{
+                //    return RedirectToPage("/ChangePassword");
+                //}
+
                 return RedirectToPage("/Index");
+
             }
             else
             {
                 ModelState.AddModelError("", "Invalid Two-Factor Authentication code");
                 return Page();
             }
+
+            //// Verify the Two-Factor Authentication code
+            //var result = await userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultAuthenticatorProvider, TwoFactorAuthViewModel.Code);
+
+            //if (result)
+            //{
+            //    // Two-Factor Authentication successful, sign in the user
+            //    await signInManager.SignInAsync(user, isPersistent: false);
+            //    return RedirectToPage("/Index");
+            //}
+            //else
+            //{
+            //    ModelState.AddModelError("", "Invalid Two-Factor Authentication code");
+            //    return Page();
+            //}
         }
     }
 }

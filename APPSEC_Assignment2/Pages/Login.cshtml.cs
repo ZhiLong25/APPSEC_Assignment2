@@ -69,7 +69,6 @@ namespace APPSEC_Assignment2.Pages
                 if (ModelState.IsValid)
                 {
 
-
                     var user = await userManager.FindByNameAsync(LModel.Email);
 
                     var identityResult = await signInManager.PasswordSignInAsync(
@@ -79,18 +78,16 @@ namespace APPSEC_Assignment2.Pages
                         lockoutOnFailure: true // Enable lockout on failure
                     );
 
-                    if (identityResult.IsLockedOut)
-                    {
-                        return RedirectToPage("/ChangePassword");
-                    }
+                    TempData["Email"] = LModel.Email;
+                    TempData["Password"] = LModel.Password;
+                    TempData["RememberMe"] = LModel.RememberMe;
+
+
 
 
                     if (user != null && BCrypt.Net.BCrypt.Verify(LModel.Password, user.Password))
                     {
                         contxt.HttpContext.Session.SetString("Username", LModel.Email);
-
-
-
 
                         // User authentication successful, check if 2FA is enabled
                         //if (await userManager.GetTwoFactorEnabledAsync(user))

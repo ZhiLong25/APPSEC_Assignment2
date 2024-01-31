@@ -20,8 +20,6 @@ namespace APPSEC_Assignment2.Pages
         {
 
 
-
-
             var session = contxt.HttpContext.Session.GetString("AuthToken");
 
             if (session == null)

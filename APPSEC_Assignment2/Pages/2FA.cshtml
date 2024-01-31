@@ -5,12 +5,12 @@
 
 <form method="post">
     <div class="form-group">
-        <label asp-for="TwoFactorAuthViewModel.Code"></label>
-        <input asp-for="TwoFactorAuthViewModel.Code" class="form-control" />
-        <span asp-validation-for="TwoFactorAuthViewModel.Code" class="text-danger"></span>
+        <label asp-for="verificationField"></label>
+        <input asp-for="verificationField" class="form-control" />
+        <span asp-validation-for="verificationField" class="text-danger"></span>
     </div>
 
-    <input type="hidden" asp-for="TwoFactorAuthViewModel.UserId" />
+    <input type="hidden" asp-for="verificationField" />
 
     <button type="submit" class="btn btn-primary">Verify</button>
 </form>
