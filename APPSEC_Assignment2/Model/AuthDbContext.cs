@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Reflection.Metadata;
 using APPSEC_Assignment2.ViewModels;
 using System.Collections.Generic;
+using APPSEC_Assignment2.ViewModel;
 
 namespace APPSEC_Assignment2.Model
 {
@@ -12,7 +13,9 @@ namespace APPSEC_Assignment2.Model
 
         public DbSet<Register> RegisteredUsers { get; set; }
 
-        private readonly IConfiguration _configuration;
+		public DbSet<PasswordHistory> PasswordHistories { get; set; }
+
+		private readonly IConfiguration _configuration;
         //public AuthDbContext(DbContextOptions<AuthDbContext> options):base(options){ }
         public AuthDbContext(IConfiguration configuration)
         {

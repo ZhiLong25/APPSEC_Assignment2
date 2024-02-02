@@ -1,5 +1,9 @@
 ﻿@page
+@using APPSEC_Assignment2.ViewModels;
+@using Microsoft.AspNetCore.Identity
 @model APPSEC_Assignment2.Pages.IndexModel
+@inject SignInManager<Register> SignInManager
+
 @inject IHttpContextAccessor contxt;
 
 @{
@@ -8,40 +12,33 @@
 
 
 <script>
-    // Include the token in headers
-    var userToken = "@HttpContext.Session.GetString("Username")";
-    fetch(url, {
-        headers: {
-            "User-Token": userToken
-        }
-    });
+
 </script>
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <h3>User Info</h3>
-    <ul>
-        <li> Username: @contxt.HttpContext.Session.GetString("Username")</li>
+	@if (SignInManager.IsSignedIn(User))
+	{
+		<h1>User Info</h1>
+		<div>
+			<h1 class="display-4">Welcome, @Model.FirstName @Model.LastName</h1>
+			<div>
+				<div class="card-body">
+					<h5 class="card-title">Account Details</h5>
+					<p class="card-text">Email: @User.Identity.Name</p>
+					<p class="card-text">First Name: @Model.FirstName</p>
+					<p class="card-text">Last Name: @Model.LastName</p>
+					<p class="card-text">Gender: @Model.Gender</p>
+					<p class="card-text">NRIC: @Model.Nric</p>
+					<p class="card-text">Date of Birth: @Model.DateOfBirth</p>
+					<p class="card-text">Resume: <a href="Resume/@Model.Email/@Model.ResumeFile">@Model.ResumeFile</a></p>
+					<p class="card-text">Who Am I?: @Html.Raw(Model.WAI)</p>
+					<a href="ChangePassword" class="btn btn-primary">Change Password</a>
+					<a href="Enable2FA" class="btn btn-primary">Enable 2FA</a>
+				</div>
+			</div>
+		</div>
 
-        <li> Auth: @contxt.HttpContext.Session.GetString("AuthToken")</li>
-    </ul>
-
-
-    @if (TempData.ContainsKey("AlertMessage"))
-    {
-        <div class="alert alert-warning">
-            <strong>Warning!</strong> @TempData["AlertMessage"]
-        </div>
-    }
-
-    @if (ViewData["EncryptedEmail"] != null)
-    {
-        <h3>Encrypted/Decrypted Info</h3>
-        <p>Encrypted String: @ViewData["EncryptedEmail"]</p>
-        <p>Decrypted String: @ViewData["DecryptedEmail"]</p>
-    }
-
-    
+	}
 
 
     

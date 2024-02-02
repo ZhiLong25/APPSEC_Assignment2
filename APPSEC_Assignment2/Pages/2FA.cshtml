@@ -3,14 +3,13 @@
 
 <h2>Two-Factor Authentication</h2>
 
-<form method="post">
-    <div class="form-group">
+<form method="post" asp-antiforgery="true">
+
+    <div class="form-group" >
         <label asp-for="verificationField"></label>
-        <input asp-for="verificationField" class="form-control" />
+        <input type="number" asp-for="verificationField" class="form-control" />
         <span asp-validation-for="verificationField" class="text-danger"></span>
     </div>
-
-    <input type="hidden" asp-for="verificationField" />
-
+    <div asp-validation-summary="All" class="text-danger"></div>
     <button type="submit" class="btn btn-primary">Verify</button>
 </form>

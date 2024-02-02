@@ -30,25 +30,6 @@ namespace APPSEC_Assignment2.Model
             // Send email
             client.Send(mailMessage);
 
-
-            //var smtpClient = new SmtpClient("smtp.gmail.com")
-            //{
-            //    Port = 587,
-            //    Credentials = new NetworkCredential("shotmanpuru@gmail.com", "puru69shotman"),
-            //    EnableSsl = true,
-            //};
-
-            //var mailMessage = new MailMessage
-            //{
-            //    From = new MailAddress("shotmanpuru@gmail.com"),
-            //    Subject = subject,
-            //    Body = body,
-            //    IsBodyHtml = false, // Set to true if the body contains HTML
-            //};
-
-            //mailMessage.To.Add(to);
-
-            //await smtpClient.SendMailAsync(mailMessage);
         }
 
     }

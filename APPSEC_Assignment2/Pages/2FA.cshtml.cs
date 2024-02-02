@@ -4,15 +4,20 @@ using Microsoft.AspNetCore.Identity;
 using System.Threading.Tasks;
 using APPSEC_Assignment2.ViewModels;  // Add the namespace for your ViewModel
 using APPSEC_Assignment2.ViewModel;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
+using System.Security.Claims;
+using APPSEC_Assignment2.Model;
 
 namespace APPSEC_Assignment2.Pages
 {
+    [Authorize(policy: "LoggedIn")]
     public class _2FAModel : PageModel
     {   
         private readonly UserManager<Register> userManager;
         private readonly SignInManager<Register> signInManager;
+        private readonly AuthDbContext _context;
 
-        public TwoFactorAuthViewModel TwoFactorAuthViewModel { get; set; }
 
         private string email;
         private string password;
@@ -21,62 +26,75 @@ namespace APPSEC_Assignment2.Pages
         {
             this.userManager = userManager;
             this.signInManager = signInManager;
-            TwoFactorAuthViewModel = new TwoFactorAuthViewModel();
+
         }
 
         [BindProperty]
         public string verificationField { get; set; }
 
-        public void OnGet()
+        public async Task<IActionResult> OnGetAsync()
         {
-             //email = TempData["Email"];
-             //password = TempData["Password"];
-             //rememberMe = TempData["RememberMe"];
-
-        }
-
-        public async Task<IActionResult> OnPostAsync()
-        {
-            var user = await userManager.FindByIdAsync(TwoFactorAuthViewModel.UserId);
-
-            var verificationCode = "test";
-            if (verificationField == verificationCode)
+            var user = await signInManager.UserManager.GetUserAsync(User);
+            if (user == null)
             {
-                //var identityResult = await signInManager.PasswordSignInAsync(
-                //   email,
-                //   password,
-                //    rememberMe.GetValueOrDefault(), // Use GetValueOrDefault to convert bool? to bool
-                //    lockoutOnFailure: true // Enable lockout on failure
-                //);
+                return RedirectToPage("/Index");
+            }
 
-                //if (identityResult.IsLockedOut)
-                //{
-                //    return RedirectToPage("/ChangePassword");
-                //}
+            user.TwoFactorEnabled = true;
+            user.EmailConfirmed = true;
+            await signInManager.UserManager.UpdateAsync(user);
+            return RedirectToPage("/Index");
+        }
+        public async Task<IActionResult> OnPostAsync(string Email)
+        {
+            var result = await signInManager.TwoFactorSignInAsync("Email", verificationField, false, false);
+            if (result.Succeeded)
+            {
+                // Get the user
+                var user = await signInManager.UserManager.FindByEmailAsync(Email);
 
+                // Create GUID
+                var guid = Guid.NewGuid().ToString();
+                user.GUID = guid;
+                await signInManager.UserManager.UpdateAsync(user);
+
+                //Create the security context
+                var claims = new List<Claim> {
+                        new Claim(ClaimTypes.Name, user.Email),
+                        new Claim(ClaimTypes.Email, user.Email),
+                        new Claim("Department", "HR"),
+                    };
+
+                Response.Cookies.Append("GUID", guid, new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                });
+
+                var i = new ClaimsIdentity(claims, "MyCookieAuth");
+                ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(i);
+                await HttpContext.SignInAsync("MyCookieAuth", claimsPrincipal);
+
+                // Create audit record
+                var audit = new Audit
+                {
+                    Email = user.Email,
+                    Timestamp = DateTime.Now,
+                    Action = "Login",
+                };
+
+                _context.AuditLogs.Add(audit);
+                await _context.SaveChangesAsync();
                 return RedirectToPage("/Index");
 
             }
             else
             {
-                ModelState.AddModelError("", "Invalid Two-Factor Authentication code");
+                ModelState.AddModelError("", "Invalid code");
                 return Page();
             }
 
-            //// Verify the Two-Factor Authentication code
-            //var result = await userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultAuthenticatorProvider, TwoFactorAuthViewModel.Code);
-
-            //if (result)
-            //{
-            //    // Two-Factor Authentication successful, sign in the user
-            //    await signInManager.SignInAsync(user, isPersistent: false);
-            //    return RedirectToPage("/Index");
-            //}
-            //else
-            //{
-            //    ModelState.AddModelError("", "Invalid Two-Factor Authentication code");
-            //    return Page();
-            //}
         }
     }
 }

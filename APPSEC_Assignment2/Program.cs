@@ -21,19 +21,38 @@ builder.Services.AddIdentity<Register, IdentityRole>(options =>
 
 
     // Enable 2FA
-    options.SignIn.RequireConfirmedAccount = true;
+    // options.SignIn.RequireConfirmedAccount = true;
+
 
 })
 .AddEntityFrameworkStores<AuthDbContext>()
 .AddSignInManager<SignInManager<Register>>();
 
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme) // Use the default scheme
-    .AddCookie("MyCookieAuth", options =>
-    {
-        options.Cookie.Name = "MyCookieAuth";
-        options.LoginPath = "/Login"; // Specify the login page
-        options.LogoutPath = "/Logout"; // Specify the logout page
-    });
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAllOrigins",
+        builder =>
+        {
+            builder.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+        });
+});
+
+
+builder.Services.AddAuthentication("MyCookieAuth").AddCookie("MyCookieAuth", options =>
+{
+    options.Cookie.Name = "MyCookieAuth";
+    options.AccessDeniedPath = "/Account/AccessDenied";
+});
+
+// Authorize
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("MustBelongToHRDepartment", policy => policy.RequireClaim("Department", "HR"));
+    options.AddPolicy("LoggedIn", policy => policy.RequireAssertion(context => true));
+});
+
+
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddTransient<AuditServiceModel>();
@@ -43,7 +62,11 @@ builder.Services.AddTransient<EmailSender>();
 //Force unauthenticated user to login screen
 builder.Services.ConfigureApplicationCookie(Config =>
 {
-    Config.LoginPath = "/Login";
+	Config.ExpireTimeSpan = TimeSpan.FromMinutes(1);
+	Config.LoginPath = "/Login";
+	Config.Cookie.HttpOnly = true;
+	Config.SlidingExpiration = true;
+	Config.Cookie.SameSite = SameSiteMode.Strict;
 });
 
 //Session Timeout
@@ -54,15 +77,10 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromSeconds(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
+	options.Cookie.SameSite = SameSiteMode.Strict;
+
 });
 
-
-builder.Services.Configure<IdentityOptions>(options =>
-{
-    options.ClaimsIdentity.UserNameClaimType = ClaimTypes.Email;
-    options.ClaimsIdentity.UserIdClaimType = ClaimTypes.Email;
-    options.ClaimsIdentity.EmailClaimType = ClaimTypes.Email;
-});
 
 var app = builder.Build();
 
@@ -77,6 +95,7 @@ if (!app.Environment.IsDevelopment())
 
 
 app.UseHttpsRedirection();
+app.UseCors("AllowAllOrigins");
 app.UseStaticFiles();
 
 // Custom Error Page
@@ -90,14 +109,6 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<TokenExpirationMiddleware>();
-
-// Custom Error Page
-//app.UseEndpoints(endpoints =>
-//{
-
-//    endpoints.MapRazorPages();
-//    endpoints.MapFallbackToPage("/Error");
-//});
 
 
 app.MapRazorPages();

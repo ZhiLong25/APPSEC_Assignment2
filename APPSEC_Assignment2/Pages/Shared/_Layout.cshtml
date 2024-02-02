@@ -1,4 +1,6 @@
-﻿@using Microsoft.AspNetCore.Identity
+﻿@using APPSEC_Assignment2.ViewModels;
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<Register> SignInManager
 
 <!DOCTYPE html>
 <html lang="en">
@@ -22,10 +24,8 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
 
                     @{
-                        string username = Context.Session.GetString("Username");
-                        string authToken = Context.Session.GetString("AuthToken");
 
-                        if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(authToken))
+                        if (SignInManager.IsSignedIn(User))
                         {
 
                             <ul class="navbar-nav flex-grow-1">

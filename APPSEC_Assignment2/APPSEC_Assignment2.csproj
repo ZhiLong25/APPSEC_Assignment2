@@ -21,4 +21,8 @@
     <PackageReference Include="SendGrid" Version="9.29.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="user_resume\" />
+  </ItemGroup>
+
 </Project>

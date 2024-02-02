@@ -29,20 +29,25 @@ namespace APPSEC_Assignment2.Pages
         // private readonly AuthDbContext _context;
         private readonly EmailSender _emailSender;
 
+        private readonly AuthDbContext _context;
+
+
 
         // Audit for Login
         private readonly AuditServiceModel _auditLogService;
 
-        public LoginModel(IHttpContextAccessor httpContextAccessor, SignInManager<Register> signInManager, UserManager<Register> userManager, EmailSender emailSender, AuditServiceModel auditLogService)
+        public LoginModel(IHttpContextAccessor httpContextAccessor, SignInManager<Register> signInManager, UserManager<Register> userManager, EmailSender emailSender, AuditServiceModel auditLogService, AuthDbContext context)
 		{
             // _context = context;
             contxt = httpContextAccessor;
 
             this.signInManager = signInManager;
-                _emailSender = emailSender;
+            _emailSender = emailSender;
             this.userManager = userManager;
             LModel = new Login();
             _auditLogService = auditLogService;
+            _context = context;
+
 
         }
 
@@ -69,8 +74,6 @@ namespace APPSEC_Assignment2.Pages
                 if (ModelState.IsValid)
                 {
 
-                    var user = await userManager.FindByNameAsync(LModel.Email);
-
                     var identityResult = await signInManager.PasswordSignInAsync(
                         LModel.Email,
                         LModel.Password,
@@ -78,77 +81,84 @@ namespace APPSEC_Assignment2.Pages
                         lockoutOnFailure: true // Enable lockout on failure
                     );
 
-                    TempData["Email"] = LModel.Email;
-                    TempData["Password"] = LModel.Password;
-                    TempData["RememberMe"] = LModel.RememberMe;
 
-
-
-
-                    if (user != null && BCrypt.Net.BCrypt.Verify(LModel.Password, user.Password))
+                    if (identityResult.IsLockedOut)
                     {
-                        contxt.HttpContext.Session.SetString("Username", LModel.Email);
+                        ModelState.AddModelError("", "Account locked out, try again later");
+                    }
+                    else if (identityResult.RequiresTwoFactor)
+                    {
+                        var user = await signInManager.UserManager.FindByEmailAsync(LModel.Email);
 
-                        // User authentication successful, check if 2FA is enabled
-                        //if (await userManager.GetTwoFactorEnabledAsync(user))
-                        //{
-                        //    // Generate a Two-Factor Authentication code
-                        //    var token = await userManager.GenerateTwoFactorTokenAsync(user, "Email");
+                        var code = await signInManager.UserManager.GenerateTwoFactorTokenAsync(user, "Email");
+                        await _emailSender.SendEmailAsync(LModel.Email, "Welcome to YourApp!", code);
 
-                        //    // Send the token to the user (e.g., via email or SMS)
-                        //    await SendEmailAsync(user.UserName, "Your 2FA Code", $"Your 2FA code is: {token}");
+                        _auditLogService.LogUserActivity(LModel.Email, "Login", $"Asking to verifying 2FA for {LModel.Email}");
+                        return RedirectToPage("/2fa" ,new { Email = LModel.Email });
+                    }
 
-                        //    // Redirect to a page where the user enters the code
-                        //    return RedirectToAction("2FA", new { userId = user.Id });
-                        //}
+                    else if (identityResult.Succeeded)
+                    {
+						var user = await signInManager.UserManager.FindByEmailAsync(LModel.Email);
 
+						var GUID = Request.Cookies["GUID"];
+						if (user.GUID != null)
+						{
+                            if (user.GUID != GUID)
+                            {
+								// GUID is not the same, audit and logout
+								_auditLogService.LogUserActivity(LModel.Email, "Login", $"Multiple Device detected {LModel.Email}");
 
+								await signInManager.SignOutAsync();
+								return RedirectToPage("/Index");
+							}
+						}
 
-                        string guid = Guid.NewGuid().ToString();
-                        contxt.HttpContext.Session.SetString("AuthToken", guid);
+						// Get the user
+                        await signInManager.UserManager.UpdateAsync(user);
 
-                        contxt.HttpContext.Response.Cookies.Append("AuthToken", guid, new CookieOptions
-                        {
-                            Expires = DateTime.Now.AddSeconds(10),
-                            HttpOnly = true,
-                            SameSite = SameSiteMode.Strict,
-                            Secure = true
-                        });
+                        // Create GUID
+                        var guid = Guid.NewGuid().ToString();
+                        user.GUID = guid;
+                        user.GUID = guid;
+                        await signInManager.UserManager.UpdateAsync(user);
 
-
+                        //Create the security context
                         var claims = new List<Claim> {
-                            new Claim(ClaimTypes.Email, user.UserName),
+                            new Claim(ClaimTypes.Name, user.Email),
+                            new Claim(ClaimTypes.Email, user.Email),
+                            new Claim("Department", "HR"),
                         };
+
+                        Response.Cookies.Append("GUID", guid, new CookieOptions
+                        {
+                            HttpOnly = true,
+                            Secure = true,
+                            SameSite = SameSiteMode.Strict,
+                        });
 
                         var i = new ClaimsIdentity(claims, "MyCookieAuth");
                         ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(i);
                         await HttpContext.SignInAsync("MyCookieAuth", claimsPrincipal);
 
-                        //var timeSinceLastChange = DateTime.UtcNow - user.PasswordChangedDate;
+                        var audit = new Audit
+                        {
+                            Email = user.Email,
+                            Timestamp = DateTime.Now,
+                            Action = "Login",
+                            Details = "Login attempt"
+                        };
 
-                        //if (timeSinceLastChange > TimeSpan.FromMinutes(1))
-                        //{
-                        //    TempData["AlertMessage"] = "Password has to be changed every 1 minute, login to change";
-                        //    return RedirectToPage("/ChangePassword");
-                        //}
+                        _context.AuditLogs.Add(audit);
+                        await _context.SaveChangesAsync();
 
-                        var verificationCode = "test";
-
-                        _auditLogService.LogUserActivity(LModel.Email, "Login", $"Log in successful {LModel.Email}");
-
-
-
-                        await _emailSender.SendEmailAsync(LModel.Email, "Welcome to YourApp!", verificationCode);
-
-
-                        return RedirectToPage("/2fa");
-
+                        return RedirectToPage("Index");
                     }
                     else
                     {
-                        _auditLogService.LogUserActivity(LModel.Email, "Login", $"Failed login attempt from {LModel.Email}");
-                        ModelState.AddModelError("", "Username or Password incorrect");
-                    }
+						_auditLogService.LogUserActivity(LModel.Email, "Login", $"Failed login attempt from {LModel.Email}");
+						ModelState.AddModelError("", "Username or Password incorrect");
+					}
 
                 }
                 

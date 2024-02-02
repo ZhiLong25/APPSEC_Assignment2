@@ -11,18 +11,25 @@ namespace APPSEC_Assignment2.Pages
     public class LogoutModel : PageModel
     {
 		private readonly SignInManager<Register> signInManager;
-		public LogoutModel(SignInManager<Register> signInManager)
+		private UserManager<Register> userManager { get; }
+
+		public LogoutModel(SignInManager<Register> signInManager, UserManager<Register> userManager)
 		{
+			this.userManager = userManager;
 			this.signInManager = signInManager;
 		}
 		public void OnGet() { }
 		public async Task<IActionResult> OnPostLogoutAsync()
         {
+			var user = await userManager.GetUserAsync(User);
+			user.GUID = null;
+			await signInManager.UserManager.UpdateAsync(user);
+
 			await signInManager.SignOutAsync();
 
             HttpContext.Session.Clear();
 
-
+			
             return RedirectToPage("Login");
 		}
 		public async Task<IActionResult> OnPostDontLogoutAsync()

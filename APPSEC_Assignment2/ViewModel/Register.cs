@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
+﻿using APPSEC_Assignment2.ViewModel;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.ComponentModel.DataAnnotations;
@@ -23,10 +24,6 @@ namespace APPSEC_Assignment2.ViewModels
         [Required(ErrorMessage = "NRIC is required")]
         public string NRIC { get; set; }
 
-        [Required(ErrorMessage = "Email is required")]
-        [DataType(DataType.EmailAddress)]
-        public string Email { get; set; }
-
         [Required(ErrorMessage = "Password is required")]
         [DataType(DataType.Password)]
         [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$",
@@ -44,12 +41,18 @@ namespace APPSEC_Assignment2.ViewModels
         [DataType(DataType.Date)]
         public DateTime DOB { get; set; }
 
-        public string Resume { get; set; }
+        public string? Resume { get; set; }
 
         [Required(ErrorMessage = "Who am I is required")]
         public string WAI { get; set; }
 
-        public DateTime PasswordChangedDate { get; set; }
+        public string GUID { get; set; } = string.Empty;
+
+		public DateTime LastPasswordChange { get; set; } = DateTime.Now;
+
+		public List<PasswordHistory> PasswordHistory { get; set; } = new List<PasswordHistory>();
+
+		public DateTime PasswordChangedDate { get; set; } = DateTime.Now;
 
         public string? EncryptedEmail { get; set; }
         public string? DecryptedEmail { get; set; }
