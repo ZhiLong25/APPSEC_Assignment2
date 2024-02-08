@@ -31,22 +31,21 @@ namespace APPSEC_Assignment2.Pages
 		public string LastName { get; set; }
 		public string Email { get; set; }
 		public string Gender { get; set; }
-		public string Nric { get; set; }
-		public DateTime DateOfBirth { get; set; }
+		public string NRIC { get; set; }
+		public DateTime DOB { get; set; }
 		public string WAI { get; set; }
-		public string ResumeFile { get; set; }
+		public string Resume { get; set; }
 		
 		public async Task<IActionResult> OnGet()
 		{
-			// Get GUID
-			var GUID = Request.Cookies["GUID"];
-			var p = DataProtectionProvider.Create("EncryptData");
-			var dataProtect = p.CreateProtector("MySecretKey");
+
 			var user = await userManager.GetUserAsync(User);
 
 			if (user != null)
 			{
 				// Check GUID
+				var GUID = Request.Cookies["GUID"];
+
 				if (user.GUID != GUID)
 				{
 					// GUID is not the same, audit and logout
@@ -55,6 +54,7 @@ namespace APPSEC_Assignment2.Pages
 						Email = user.Email,
 						Timestamp = DateTime.Now,
 						Action = "Invalid GUID",
+						Details = "Invalid GUID from another device"
 					};
 
 					_context.AuditLogs.Add(audit);
@@ -63,23 +63,17 @@ namespace APPSEC_Assignment2.Pages
 					return RedirectToPage("/Index");
 				}
 
-				// Check last password change
-				var lastPasswordChange = user.LastPasswordChange;
-				var minutesSinceLastPasswordChange = (DateTime.Now - lastPasswordChange).TotalMinutes;
 
-				if (minutesSinceLastPasswordChange > 60)
-				{
-					return RedirectToPage("/ChangePassword");
-				}
+                var dataProtectionProvider = DataProtectionProvider.Create("EncryptData");
+                var protector = dataProtectionProvider.CreateProtector("MySecretKey");
 
-
-				Email = user.Email;
+                Email = user.Email;
 				FirstName = user.FirstName;
 				LastName = user.LastName;
 				Gender = user.Gender;
-				Nric = dataProtect.Unprotect(user.NRIC);
-				DateOfBirth = user.DOB;
-				ResumeFile = user.Resume;
+				NRIC = protector.Unprotect(user.NRIC);
+				DOB = user.DOB;
+				Resume = user.Resume;
 				WAI = user.WAI;
 			}
 

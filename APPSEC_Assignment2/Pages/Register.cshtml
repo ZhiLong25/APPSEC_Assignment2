@@ -42,14 +42,14 @@
 
                 <div class="mb-3">
                     <label class="form-label" asp-for="RModel.Email">Email Address</label>
-                    <input type="text" asp-for="RModel.Email" class="form-control" />
+                    <input type="email" asp-for="RModel.Email" class="form-control" />
                     <span asp-validation-for="RModel.Email" class="text-danger"></span>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label" asp-for="RModel.Password">Password</label>
-                        <input id="password" type="password" asp-for="RModel.Password" class="form-control" />
+                        <label class="form-label" asp-for="Password">Password</label>
+                        <input id="password" type="password" asp-for="Password" class="form-control" />
                         <div class="progress mt-1">
                             <div id="strength" class="progress-bar bg-danger progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
@@ -57,9 +57,9 @@
                     </div>
 
                     <div class="col-md-6 mb-3">
-                        <label class="form-label" asp-for="RModel.ConfirmPassword">Confirm Password</label>
-                        <input type="password" asp-for="RModel.ConfirmPassword" class="form-control" />
-                        <span asp-validation-for="RModel.ConfirmPassword" class="text-danger"></span>
+                        <label class="form-label" asp-for="ConfirmPassword">Confirm Password</label>
+                        <input type="password" asp-for="ConfirmPassword" class="form-control" />
+                        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
                     </div>
                 </div>
 
@@ -94,22 +94,18 @@
 
 
     <script>
-    function onSubmit(token) {
-        document.getElementById("registerForm").submit();
-    }
-
     var password = document.getElementById("password")
     password.addEventListener('keyup', function () {
-        checkPassword(password.value)
+        validatePassword(password.value)
     })
 
     password.addEventListener('change', function () {
-        checkPassword(password.value)
+        validatePassword(password.value)
     })
 
-    function checkPassword(password) {
+    function validatePassword(password) {
         var strengthBar = document.getElementById("strength")
-        var strengthBarValue = document.getElementById("strength").style
+        var strengthBarProgress = document.getElementById("strength").style
         var strength = 0;
         if (password.match(/[a-z]/)) {
             strength += 1
@@ -129,34 +125,28 @@
 
         switch (strength) {
             case 0:
-                strengthBarValue.width = "0%";
+                strengthBarProgress.width = "0%";
                 strengthBar.className = 'progress-bar bg-danger progress-bar-striped progress-bar-animated';
-                strengthBar.innerHTML = "Non-Existent...";
                 break
             case 1:
-                strengthBarValue.width = "20%";
+                strengthBarProgress.width = "20%";
                 strengthBar.className = 'progress-bar bg-danger progress-bar-striped progress-bar-animated';
-                strengthBar.innerHTML = "Too weak...";
                 break
             case 2:
-                strengthBarValue.width = "40%";
+                strengthBarProgress.width = "40%";
                 strengthBar.className = 'progress-bar bg-warning progress-bar-striped progress-bar-animated';
-                strengthBar.innerHTML = "Still too weak...";
                 break
             case 3:
-                strengthBarValue.width = "60%";
+                strengthBarProgress.width = "60%";
                 strengthBar.className = 'progress-bar bg-warning progress-bar-striped progress-bar-animated';
-                strengthBar.innerHTML = "Getting better...";
                 break
             case 4:
-                strengthBarValue.width = "80%";
+                strengthBarProgress.width = "80%";
                 strengthBar.className = 'progress-bar bg-info progress-bar-striped progress-bar-animated';
-                strengthBar.innerHTML = "Almost there...";
                 break
             case 5:
-                strengthBarValue.width = "100%";
+                strengthBarProgress.width = "100%";
                 strengthBar.className = 'progress-bar bg-success progress-bar-striped';
-                strengthBar.innerHTML = "Strong!";
                 break
         }
     }

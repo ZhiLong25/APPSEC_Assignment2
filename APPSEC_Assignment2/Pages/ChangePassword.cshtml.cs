@@ -6,17 +6,30 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace APPSEC_Assignment2.Pages
 {
 	[Authorize(Policy = "LoggedIn")]
-	[ValidateAntiForgeryToken]
 	public class ChangePasswordModel : PageModel
     {
 
 		[BindProperty]
-		public ChangePassword CPModel { get; set; }
+		[Required]
+		[DataType(DataType.Password)]
+		public string CurrentPassword { get; set; }
+
+		[BindProperty]
+		[Required]
+		[DataType(DataType.Password)]
+		public string Password { get; set; }
+
+		[BindProperty]
+		[Required]
+		[DataType(DataType.Password)]
+		[Compare(nameof(Password), ErrorMessage = "Passwords does not match")]
+		public string ConfirmPassword { get; set; }
 
 		private readonly UserManager<Register> _userManager;
         private readonly SignInManager<Register> _signInManager;
@@ -36,8 +49,18 @@ namespace APPSEC_Assignment2.Pages
             if (user == null)
             {
                 return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
-            }
-            return Page();
+			}
+
+
+			var lastChange = user.LastPasswordChange;
+			var duration = DateTime.Now - lastChange;
+			if (duration.TotalMinutes > 2)
+			{
+				ModelState.AddModelError("", "You need to reset your password now password age (2 minute)");
+
+			}
+
+			return Page();
 
         }
 
@@ -45,68 +68,51 @@ namespace APPSEC_Assignment2.Pages
         public async Task<IActionResult> OnPostAsync()
         {
 			// Get the user
-			var user = await _signInManager.UserManager.FindByNameAsync(User.Identity.Name);
-			var passwordHistory = await _context.PasswordHistories.Where(x => x.UserId == user.Id).ToListAsync();
-			if (user == null)
-			{
-				ModelState.AddModelError("", "User not found");
-				return Page();
-			}
+			var user = await _userManager.GetUserAsync(User);
+			var passwordHistory = await _context.PasswordHistory.Where(x => x.UserId == user.Id).ToListAsync();
+			
 
-			// Check whether the old password is correct
-			var result = await _signInManager.UserManager.CheckPasswordAsync(user, CPModel.CurrentPassword);
+			var checkPass = await _signInManager.UserManager.CheckPasswordAsync(user, Password);
 
-			if (!result)
-			{
-				ModelState.AddModelError("", "Current password is incorrect");
-				return Page();
-			}
-
-			// Check if the new password is the same as the old password
-			var newResult = await _signInManager.UserManager.CheckPasswordAsync(user, CPModel.Password);
-
-			if (newResult)
+			if (checkPass)
 			{
 				ModelState.AddModelError("", "New password cannot be the same as the old password");
 				return Page();
 			}
 
-			// Check the password is in the most recent 2 passwords
-			var historyResult = passwordHistory.Take(2).OrderByDescending(x => x.DateChanged);
-
-			// If the password is the last 2 passwords, return an error
-			foreach (var item in historyResult)
+            // Check if it exist in 2 previous passwords
+            var historyResult = passwordHistory.OrderByDescending(x => x.DateChanged).Take(2);
+            foreach (var item in historyResult)
 			{
-				var result2 = _signInManager.UserManager.PasswordHasher.VerifyHashedPassword(user, item.Password, CPModel.Password);
-				if (result2 == PasswordVerificationResult.Success)
+				var checkExist = _signInManager.UserManager.PasswordHasher.VerifyHashedPassword(user, item.Password, Password);
+				if (checkExist == PasswordVerificationResult.Success)
 				{
 					ModelState.AddModelError("", "New password cannot be the same as the last 2 passwords");
 					return Page();
 				}
 			}
 
-			// Check whether a password change happened in the last 24 hours
+			// Check password last changed timeline
 			var lastChange = user.LastPasswordChange;
-			var timeSpan = DateTime.Now - lastChange;
-			if (timeSpan.TotalMinutes < 30)
+			var duration = DateTime.Now - lastChange;
+			if (duration.TotalMinutes < 1)
 			{
-				ModelState.AddModelError("", "You can only change your password once every 30 minutes");
+				ModelState.AddModelError("", "You can only change your password once every 1 minute");
 				return Page();
 			}
 
-
-			// Change the password
-			await _signInManager.UserManager.ChangePasswordAsync(user, CPModel.CurrentPassword, CPModel.Password);
-
-			// Add the password to the history
+			await _signInManager.UserManager.ChangePasswordAsync(user, CurrentPassword, Password);
 			user.PasswordHistory.Add(new PasswordHistory
 			{
 				UserId = user.Id,
-				Password = _signInManager.UserManager.PasswordHasher.HashPassword(user, CPModel.Password),
+				Password = _signInManager.UserManager.PasswordHasher.HashPassword(user, Password),
 				DateChanged = DateTime.Now
 			});
 			user.LastPasswordChange = DateTime.Now;
-			return RedirectToPage("/Index"); // Redirect to home page or another page after successful password change.
+
+			await _context.SaveChangesAsync();
+
+			return RedirectToPage("/Index"); 
         }
     }
 }

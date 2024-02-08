@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="user_resume\" />
+    <Folder Include="resume\" />
   </ItemGroup>
 
 </Project>

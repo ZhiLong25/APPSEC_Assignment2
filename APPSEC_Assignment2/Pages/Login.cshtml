@@ -56,7 +56,12 @@
 
 
                     <div asp-validation-summary="All" class="text-danger"></div>
-
+                    @if (TempData["AccountLocked"] != null && (bool)TempData["AccountLocked"])
+                    {
+                        <div id="recoveryOption" style="display: none;">
+                            <p>Your account is locked. Click <a href="/RecoverPassword">here</a> to recover your account.</p>
+                        </div>
+                    }
 
                     <div class="mb-3">
                         <button type="submit" class="btn btn-primary">Login</button>
@@ -79,7 +84,13 @@
     </div>
 
 
-
+<script>
+    // Wait for 1 minute
+    setTimeout(function () {
+        // Show the recovery option
+        document.getElementById("recoveryOption").style.display = "block";
+    }, 6000);
+</script>
 
 <script>
     grecaptcha.ready(function () {

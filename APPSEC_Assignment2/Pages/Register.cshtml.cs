@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Web;
 using Microsoft.AspNetCore.DataProtection;
 using System.Text.Encodings.Web;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
 namespace APPSEC_Assignment2.Pages
 {
@@ -21,8 +23,21 @@ namespace APPSEC_Assignment2.Pages
         [BindProperty]
         public IFormFile Resume { get; set; }
 
-        // private readonly AuthDbContext _context;
-        private readonly IWebHostEnvironment _environment;
+		[BindProperty]
+		[Required(ErrorMessage = "Password is required")]
+		[DataType(DataType.Password)]
+		[RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$",
+	    ErrorMessage = "Password must be at least 12 characters long and include a combination of lowercase, uppercase, numbers, and special characters.")]
+		public string Password { get; set; }
+
+        [BindProperty]
+		[Required(ErrorMessage = "Confirm Password is required")]
+		[DataType(DataType.Password)]
+		[Compare(nameof(Password), ErrorMessage = "Password and confirmation password do not match")]
+		public string ConfirmPassword { get; set; }
+
+		// private readonly AuthDbContext _context;
+		private readonly IWebHostEnvironment _environment;
 
 
         private readonly UserManager<Register> _userManager;
@@ -43,7 +58,6 @@ namespace APPSEC_Assignment2.Pages
 
 
         [ValidateAntiForgeryToken]
-        //Save data into the database
         public async Task<IActionResult> OnPostAsync()
         {
             var file_path_overall = "";
@@ -63,12 +77,12 @@ namespace APPSEC_Assignment2.Pages
                 var fileExtension = Path.GetExtension(Resume.FileName).ToLowerInvariant();
                 if (!allowedExtensions.Contains(fileExtension))
                 {
-                    ModelState.AddModelError(nameof(Resume), "Invalid file extension.only Allowed extensions are .pdf, .doc, .docx");
+                    ModelState.AddModelError(nameof(Resume), "Only .pdf, .doc, .docx allowed");
                     return Page();
                 }
                 else
                 {
-                    file_path_overall = generateUniqueID(fileExtension);
+                    file_path_overall = randomFileString(fileExtension);
                     using (var File_Stream = new FileStream(file_path_overall, FileMode.Create))
                     {
                         await Resume.CopyToAsync(File_Stream);
@@ -95,19 +109,17 @@ namespace APPSEC_Assignment2.Pages
                 RModel.DecryptedEmail = Encoding.UTF8.GetString(DecEmail);
                 var decEmail = Encoding.UTF8.GetString(DecEmail);
                 
-                var p = DataProtectionProvider.Create("EncryptData");
-                var dataProtect = p.CreateProtector("MySecretKey");
-                var encoder = UrlEncoder.Create();
+                var dataProtectionProvider = DataProtectionProvider.Create("EncryptData");
+                var protector = dataProtectionProvider.CreateProtector("MySecretKey");
 
                 var user = new Register
                 {
                     UserName = HttpUtility.HtmlEncode(RModel.Email),
                     Email = RModel.Email,
                     FirstName = HttpUtility.HtmlEncode(RModel.FirstName),
-                    Password = HttpUtility.HtmlEncode(RModel.Password),
                     LastName = HttpUtility.HtmlEncode(RModel.LastName),
                     Gender = HttpUtility.HtmlEncode(RModel.Gender),
-                    NRIC = dataProtect.Protect(RModel.NRIC),
+                    NRIC = protector.Protect(RModel.NRIC),
                     Resume = file_path_overall,
                     DOB = RModel.DOB,
                     WAI = HttpUtility.HtmlEncode(RModel.WAI),
@@ -117,13 +129,11 @@ namespace APPSEC_Assignment2.Pages
 
                 };
 
+                var result = await _userManager.CreateAsync(user, Password);
 
                 // Hash the password using BCrypt
-                string hashedPassword = BCrypt.Net.BCrypt.HashPassword(RModel.Password);
-                user.Password = hashedPassword;
-
-
-                var result = await _userManager.CreateAsync(user, RModel.Password);
+                //string hashedPassword = BCrypt.Net.BCrypt.HashPassword(Password);
+                //user.PasswordHash = hashedPassword;
 
                 if (result.Succeeded)
                 {
@@ -151,15 +161,15 @@ namespace APPSEC_Assignment2.Pages
         }
 
 
-        private string generateUniqueID(string file_Extension)
+        private string randomFileString(string file)
         {
             var random = new Random();
-            var Random_ID = random.Next(1, 100000000);
-            var filePath = Path.Combine(".\\user_resume", Random_ID + file_Extension);
+            var rid = random.Next(1, 100000000);
+            var filePath = Path.Combine(".\\resume", rid + file);
 
             if (System.IO.File.Exists(filePath))
             {
-                return generateUniqueID(file_Extension);
+                return randomFileString(file);
             }
             else
             {

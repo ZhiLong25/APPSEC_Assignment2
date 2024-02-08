@@ -21,11 +21,12 @@ namespace APPSEC_Assignment2.Pages
 
 		private readonly SignInManager<Register> signInManager;
 		private readonly UserManager<Register> userManager;
-		public RecoverPasswordModel(SignInManager<Register> signInManager,AuthDbContext context,UserManager<Register> userManager)
+		public RecoverPasswordModel(SignInManager<Register> signInManager,AuthDbContext context,UserManager<Register> userManager, EmailSender emailSender)
 		{
 			this.signInManager = signInManager;
 			this.userManager = userManager;
 			_context = context;
+			_emailSender = emailSender;
 		}
 
 		public async Task<IActionResult> OnPostAsync()
@@ -40,8 +41,7 @@ namespace APPSEC_Assignment2.Pages
 
 				var token = await userManager.GeneratePasswordResetTokenAsync(user);
 
-				// Make link
-				var link = Url.Page("/RecoverPassword", null, new { token, UserId = user.Id }, Request.Scheme, Request.Host.ToString());
+				var link = Url.Page("/ResetPassword", null, new { token, UserId = user.Id }, Request.Scheme, Request.Host.ToString());
 
 				await _emailSender.SendEmailAsync(Email, "Reset Password", $"Click here to reset your password: {link}");
 

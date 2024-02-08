@@ -81,33 +81,57 @@ namespace APPSEC_Assignment2.Pages
                         lockoutOnFailure: true // Enable lockout on failure
                     );
 
+                    var user = await signInManager.UserManager.FindByEmailAsync(LModel.Email);
+					// bool isTwoFactorEnabled = await signInManager.UserManager.GetTwoFactorEnabledAsync(user);
 
-                    if (identityResult.IsLockedOut)
+					if (identityResult.IsLockedOut)
                     {
+                        TempData["AccountLocked"] = true;
+
                         ModelState.AddModelError("", "Account locked out, try again later");
                     }
+
                     else if (identityResult.RequiresTwoFactor)
                     {
-                        var user = await signInManager.UserManager.FindByEmailAsync(LModel.Email);
 
                         var code = await signInManager.UserManager.GenerateTwoFactorTokenAsync(user, "Email");
                         await _emailSender.SendEmailAsync(LModel.Email, "Welcome to YourApp!", code);
 
-                        _auditLogService.LogUserActivity(LModel.Email, "Login", $"Asking to verifying 2FA for {LModel.Email}");
-                        return RedirectToPage("/2fa" ,new { Email = LModel.Email });
+                        var audit = new Audit
+                        {
+                            Email = user.Email,
+                            Timestamp = DateTime.Now,
+                            Action = "Login",
+                            Details = $"Asking to verify 2FA for {LModel.Email}"
+                        };
+
+                        _context.AuditLogs.Add(audit);
+                        await _context.SaveChangesAsync();
+
+                        return RedirectToPage("/2fa", new { Email = LModel.Email });
                     }
 
                     else if (identityResult.Succeeded)
                     {
-						var user = await signInManager.UserManager.FindByEmailAsync(LModel.Email);
 
 						var GUID = Request.Cookies["GUID"];
 						if (user.GUID != null)
 						{
                             if (user.GUID != GUID)
                             {
-								// GUID is not the same, audit and logout
-								_auditLogService.LogUserActivity(LModel.Email, "Login", $"Multiple Device detected {LModel.Email}");
+                                // GUID is not the same, audit and logout
+
+                                var audit2 = new Audit
+                                {
+                                    Email = user.Email,
+                                    Timestamp = DateTime.Now,
+                                    Action = "Login",
+                                    Details = $"Multiple Device detected {LModel.Email}"
+                                };
+
+                                _context.AuditLogs.Add(audit2);
+                                await _context.SaveChangesAsync();
+
 
 								await signInManager.SignOutAsync();
 								return RedirectToPage("/Index");
@@ -119,7 +143,6 @@ namespace APPSEC_Assignment2.Pages
 
                         // Create GUID
                         var guid = Guid.NewGuid().ToString();
-                        user.GUID = guid;
                         user.GUID = guid;
                         await signInManager.UserManager.UpdateAsync(user);
 
@@ -156,7 +179,17 @@ namespace APPSEC_Assignment2.Pages
                     }
                     else
                     {
-						_auditLogService.LogUserActivity(LModel.Email, "Login", $"Failed login attempt from {LModel.Email}");
+                        var audit = new Audit
+                        {
+                            Email = user.Email,
+                            Timestamp = DateTime.Now,
+                            Action = "Login",
+                            Details = $"Failed login attempt from {LModel.Email}"
+                        };
+
+                        _context.AuditLogs.Add(audit);
+                        await _context.SaveChangesAsync();
+
 						ModelState.AddModelError("", "Username or Password incorrect");
 					}
 

@@ -22,7 +22,7 @@ namespace APPSEC_Assignment2.Model
             mailMessage.Subject = subject;
             mailMessage.IsBodyHtml = true;
             StringBuilder mailBody = new StringBuilder();
-            mailBody.AppendFormat("<h1>User Registered</h1>");
+            mailBody.AppendFormat("<h1>APPSEC Application</h1>");
             mailBody.AppendFormat("<br />");
             mailBody.AppendFormat($"<p>{body}</p>");
             mailMessage.Body = mailBody.ToString();

@@ -13,7 +13,7 @@ namespace APPSEC_Assignment2.Model
 
         public DbSet<Register> RegisteredUsers { get; set; }
 
-		public DbSet<PasswordHistory> PasswordHistories { get; set; }
+		public DbSet<PasswordHistory> PasswordHistory { get; set; }
 
 		private readonly IConfiguration _configuration;
         //public AuthDbContext(DbContextOptions<AuthDbContext> options):base(options){ }

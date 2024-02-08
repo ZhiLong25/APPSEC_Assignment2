@@ -21,15 +21,14 @@ namespace APPSEC_Assignment2.Pages
 		public void OnGet() { }
 		public async Task<IActionResult> OnPostLogoutAsync()
         {
-			var user = await userManager.GetUserAsync(User);
+            HttpContext.Session.Clear();
+            var user = await userManager.GetUserAsync(User);
+
 			user.GUID = null;
 			await signInManager.UserManager.UpdateAsync(user);
 
 			await signInManager.SignOutAsync();
 
-            HttpContext.Session.Clear();
-
-			
             return RedirectToPage("Login");
 		}
 		public async Task<IActionResult> OnPostDontLogoutAsync()

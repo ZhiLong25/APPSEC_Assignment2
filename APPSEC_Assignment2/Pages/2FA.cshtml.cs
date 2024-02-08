@@ -11,7 +11,6 @@ using APPSEC_Assignment2.Model;
 
 namespace APPSEC_Assignment2.Pages
 {
-    [Authorize(policy: "LoggedIn")]
     public class _2FAModel : PageModel
     {   
         private readonly UserManager<Register> userManager;
@@ -19,46 +18,30 @@ namespace APPSEC_Assignment2.Pages
         private readonly AuthDbContext _context;
 
 
-        private string email;
-        private string password;
-        private bool? rememberMe;
-        public _2FAModel(UserManager<Register> userManager, SignInManager<Register> signInManager)
+        public _2FAModel(UserManager<Register> userManager, SignInManager<Register> signInManager, AuthDbContext context)
         {
             this.userManager = userManager;
             this.signInManager = signInManager;
-
+            _context = context;
         }
 
         [BindProperty]
         public string verificationField { get; set; }
 
-        public async Task<IActionResult> OnGetAsync()
-        {
-            var user = await signInManager.UserManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return RedirectToPage("/Index");
-            }
-
-            user.TwoFactorEnabled = true;
-            user.EmailConfirmed = true;
-            await signInManager.UserManager.UpdateAsync(user);
-            return RedirectToPage("/Index");
-        }
         public async Task<IActionResult> OnPostAsync(string Email)
         {
             var result = await signInManager.TwoFactorSignInAsync("Email", verificationField, false, false);
+
+            // 2FA Passed
             if (result.Succeeded)
             {
-                // Get the user
                 var user = await signInManager.UserManager.FindByEmailAsync(Email);
 
-                // Create GUID
+                // Set new GUID
                 var guid = Guid.NewGuid().ToString();
                 user.GUID = guid;
                 await signInManager.UserManager.UpdateAsync(user);
 
-                //Create the security context
                 var claims = new List<Claim> {
                         new Claim(ClaimTypes.Name, user.Email),
                         new Claim(ClaimTypes.Email, user.Email),
@@ -76,12 +59,12 @@ namespace APPSEC_Assignment2.Pages
                 ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(i);
                 await HttpContext.SignInAsync("MyCookieAuth", claimsPrincipal);
 
-                // Create audit record
                 var audit = new Audit
                 {
                     Email = user.Email,
                     Timestamp = DateTime.Now,
                     Action = "Login",
+                    Details = "2FA Successful"
                 };
 
                 _context.AuditLogs.Add(audit);

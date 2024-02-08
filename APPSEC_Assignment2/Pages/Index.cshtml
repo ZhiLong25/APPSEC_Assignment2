@@ -10,34 +10,37 @@
     ViewData["Title"] = "Home page";
 }
 
-
-<script>
-
-</script>
-
 <div class="text-center">
 	@if (SignInManager.IsSignedIn(User))
 	{
 		<h1>User Info</h1>
 		<div>
-			<h1 class="display-4">Welcome, @Model.FirstName @Model.LastName</h1>
+			<h1 class="display-4">Account Details</h1>
 			<div>
-				<div class="card-body">
-					<h5 class="card-title">Account Details</h5>
-					<p class="card-text">Email: @User.Identity.Name</p>
-					<p class="card-text">First Name: @Model.FirstName</p>
-					<p class="card-text">Last Name: @Model.LastName</p>
-					<p class="card-text">Gender: @Model.Gender</p>
-					<p class="card-text">NRIC: @Model.Nric</p>
-					<p class="card-text">Date of Birth: @Model.DateOfBirth</p>
-					<p class="card-text">Resume: <a href="Resume/@Model.Email/@Model.ResumeFile">@Model.ResumeFile</a></p>
-					<p class="card-text">Who Am I?: @Html.Raw(Model.WAI)</p>
+				<div>
+					<p>First Name: @Model.FirstName </p>
+					<p>First Name: @Model.LastName </p>
+					<p>Email: @User.Identity.Name</p>
+					<p>First Name: @Model.FirstName</p>
+					<p>Last Name: @Model.LastName</p>
+					<p>Gender: @Model.Gender</p>
+					<p>NRIC: @Model.NRIC</p>
+					<p>Date of Birth: @Model.DOB</p>
+					<p>Resume: @Model.Resume</p>
+					<p>Who Am I?: @Model.WAI</p>
+
 					<a href="ChangePassword" class="btn btn-primary">Change Password</a>
-					<a href="Enable2FA" class="btn btn-primary">Enable 2FA</a>
+
 				</div>
+
+					<a href="Activate2FA" class="btn btn-primary">Click here to enable 2FA</a>
 			</div>
 		</div>
 
+	}
+	else
+	{
+		<h1 class="display-4">Please login to view details</h1>
 	}
 
 

@@ -18,19 +18,5 @@ namespace APPSEC_Assignment2.Pages
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public void LogUserActivity(string email ,string action, string details)
-        {
-            
-            var auditLog = new Audit
-            {
-                Email = email,
-                Action = action,
-                Details = details,
-                Timestamp = DateTime.UtcNow
-            };
-
-            _dbContext.AuditLogs.Add(auditLog);
-            _dbContext.SaveChanges();
-        }
     }
 }

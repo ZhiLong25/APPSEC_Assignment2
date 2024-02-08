@@ -19,14 +19,10 @@ builder.Services.AddIdentity<Register, IdentityRole>(options =>
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(1); // Lockout duration
     options.Lockout.AllowedForNewUsers = true; // Allow lockout for new users
 
-
-    // Enable 2FA
-    // options.SignIn.RequireConfirmedAccount = true;
-
-
 })
 .AddEntityFrameworkStores<AuthDbContext>()
-.AddSignInManager<SignInManager<Register>>();
+.AddSignInManager<SignInManager<Register>>()
+.AddDefaultTokenProviders();
 
 
 builder.Services.AddCors(options =>
@@ -42,7 +38,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddAuthentication("MyCookieAuth").AddCookie("MyCookieAuth", options =>
 {
     options.Cookie.Name = "MyCookieAuth";
-    options.AccessDeniedPath = "/Account/AccessDenied";
+
 });
 
 // Authorize
@@ -62,7 +58,7 @@ builder.Services.AddTransient<EmailSender>();
 //Force unauthenticated user to login screen
 builder.Services.ConfigureApplicationCookie(Config =>
 {
-	Config.ExpireTimeSpan = TimeSpan.FromMinutes(1);
+	Config.ExpireTimeSpan = TimeSpan.FromMinutes(5);
 	Config.LoginPath = "/Login";
 	Config.Cookie.HttpOnly = true;
 	Config.SlidingExpiration = true;
@@ -74,7 +70,7 @@ builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 builder.Services.AddDistributedMemoryCache(); //save session in memory
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromSeconds(30);
+    options.IdleTimeout = TimeSpan.FromMinutes(5);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 	options.Cookie.SameSite = SameSiteMode.Strict;
@@ -91,8 +87,6 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-
-
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAllOrigins");
